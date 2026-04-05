@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111111">
+  <title>Pocket Clock</title>
+  <link rel="icon" href="icon-192.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #111111;
+      --fg: #f5f5f5;
+      --muted: #bdbdbd;
+      --panel: #1b1b1b;
+      --button-bg: #2a2a2a;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f3f4f6;
+      --fg: #111111;
+      --muted: #5f6368;
+      --panel: #ffffff;
+      --button-bg: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 1rem;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+    }
+
+    main {
+      width: min(100%, 24rem);
+      padding: 1.6rem 1.1rem 1.2rem;
+      text-align: center;
+      background: var(--panel);
+      border-radius: 1.25rem;
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    #clock {
+      margin: 0;
+      font-size: clamp(2.75rem, 13vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1;
+    }
+
+    #clock-time {
+      display: inline-block;
+    }
+
+    #clock-period {
+      margin-left: 0.35rem;
+      font-size: 0.32em;
+      letter-spacing: 0.08em;
+      vertical-align: super;
+      color: var(--muted);
+    }
+
+    #date {
+      margin: 0.85rem 0 0;
+      font-size: 1rem;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    #format-toggle,
+    #theme-toggle {
+      padding: 0.65rem 0.9rem;
+      border: 0;
+      border-radius: 999px;
+      font: inherit;
+      color: var(--fg);
+      background: var(--button-bg);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pocket Clock</h1>
+    <p id="clock" aria-live="polite"><span id="clock-time">--:--:--</span><span id="clock-period"></span></p>
+    <p id="date">Loading date...</p>
+    <div class="controls">
+      <button id="format-toggle" type="button" aria-pressed="false">Switch to 24-hour</button>
+      <button id="theme-toggle" type="button" aria-pressed="false">Switch to light</button>
+    </div>
+  </main>
+
+  <script>
+    const clock = document.getElementById('clock');
+    const clockTime = document.getElementById('clock-time');
+    const clockPeriod = document.getElementById('clock-period');
+    const date = document.getElementById('date');
+    const formatToggle = document.getElementById('format-toggle');
+    const themeToggle = document.getElementById('theme-toggle');
+    let use24Hour = false;
+    let useLightTheme = false;
+
+    function updateClock() {
+      const now = new Date();
+      if (use24Hour) {
+        clockTime.textContent = now.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        clockPeriod.textContent = '';
+      } else {
+        const parts = now.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        }).split(' ');
+        clockTime.textContent = parts[0];
+        clockPeriod.textContent = parts[1] || '';
+      }
+      date.textContent = now.toLocaleDateString([], {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    formatToggle.addEventListener('click', function () {
+      use24Hour = !use24Hour;
+      formatToggle.textContent = use24Hour ? 'Switch to 12-hour' : 'Switch to 24-hour';
+      formatToggle.setAttribute('aria-pressed', String(use24Hour));
+      updateClock();
+    });
+
+    themeToggle.addEventListener('click', function () {
+      useLightTheme = !useLightTheme;
+      document.documentElement.dataset.theme = useLightTheme ? 'light' : '';
+      themeToggle.textContent = useLightTheme ? 'Switch to dark' : 'Switch to light';
+      themeToggle.setAttribute('aria-pressed', String(useLightTheme));
+    });
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+</body>
+</html>
